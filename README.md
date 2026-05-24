@@ -5,7 +5,13 @@
 [![ADK-Rust Enterprise](https://img.shields.io/badge/ADK--Rust-Enterprise-purple.svg)](https://enterprise.adk-rust.com)
 [![Registry Ready](https://img.shields.io/badge/ADK_Registry-Ready-green.svg)](https://www.zavora.ai)
 
-Give your AI agents full Slack access — messages, threads, DMs, channels, canvases, reactions, and search. 16 tools over the Slack Web API with enterprise governance and audit-ready risk classification.
+Give your AI agents full Slack access — messages, threads, DMs, channels, canvases, reactions, and search. 27 tools over the Slack Web API with enterprise governance and audit-ready risk classification.
+
+## Architecture
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/zavora-ai/mcp-slack/main/docs/assets/architecture.svg" alt="MCP Slack Architecture" width="800"/>
+</p>
 
 ## Tools (27)
 
