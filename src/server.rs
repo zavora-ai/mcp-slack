@@ -132,6 +132,99 @@ pub struct CreateCanvasInput {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct EmptyInput {}
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct GetFileInput {
+    /// File ID (e.g. F01234567)
+    pub file_id: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ListFilesInput {
+    /// Channel ID (optional, filter by channel)
+    #[serde(default)]
+    pub channel: Option<String>,
+    /// Max files (default 20)
+    #[serde(default = "default_20")]
+    pub count: u32,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ReadCanvasInput {
+    /// Canvas ID
+    pub canvas_id: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct UpdateCanvasInput {
+    /// Canvas ID
+    pub canvas_id: String,
+    /// New content in markdown (replaces entire canvas)
+    pub markdown: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ListBookmarksInput {
+    /// Channel ID
+    pub channel: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct AddBookmarkInput {
+    /// Channel ID
+    pub channel: String,
+    /// Bookmark title
+    pub title: String,
+    /// URL to bookmark
+    pub link: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ScheduleMessageInput {
+    /// Channel ID
+    pub channel: String,
+    /// Message text
+    pub text: String,
+    /// Unix timestamp for when to send
+    pub post_at: u64,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ListScheduledInput {
+    /// Channel ID (optional)
+    #[serde(default)]
+    pub channel: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct DeleteScheduledInput {
+    /// Channel ID
+    pub channel: String,
+    /// Scheduled message ID
+    pub scheduled_message_id: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct PaginatedChannelsInput {
+    /// Max per page (default 100)
+    #[serde(default = "default_100")]
+    pub limit: u32,
+    /// Cursor for next page (omit for first page)
+    #[serde(default)]
+    pub cursor: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct PaginatedHistoryInput {
+    /// Channel ID
+    pub channel: String,
+    /// Max per page (default 20)
+    #[serde(default = "default_20")]
+    pub limit: u32,
+    /// Cursor for next page (omit for first page)
+    #[serde(default)]
+    pub cursor: Option<String>,
+}
+
 fn default_20() -> u32 { 20 }
 fn default_100() -> u32 { 100 }
 
@@ -267,6 +360,100 @@ impl SlackServer {
     async fn list_emoji(&self, Parameters(_): Parameters<EmptyInput>) -> String {
         match self.client.list_emoji().await {
             Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Get file metadata and download URL by file ID")]
+    async fn get_file(&self, Parameters(i): Parameters<GetFileInput>) -> String {
+        match self.client.get_file_info(&i.file_id).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List files shared in a channel or workspace")]
+    async fn list_files(&self, Parameters(i): Parameters<ListFilesInput>) -> String {
+        match self.client.list_files(i.channel.as_deref(), i.count).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Read a canvas (export as markdown)")]
+    async fn read_canvas(&self, Parameters(i): Parameters<ReadCanvasInput>) -> String {
+        match self.client.read_canvas(&i.canvas_id).await {
+            Ok(v) => v,
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Update a canvas — replace content with new markdown")]
+    async fn update_canvas(&self, Parameters(i): Parameters<UpdateCanvasInput>) -> String {
+        match self.client.update_canvas(&i.canvas_id, &i.markdown).await {
+            Ok(()) => "Canvas updated".into(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List bookmarks in a channel")]
+    async fn list_bookmarks(&self, Parameters(i): Parameters<ListBookmarksInput>) -> String {
+        match self.client.list_bookmarks(&i.channel).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Add a bookmark (link) to a channel")]
+    async fn add_bookmark(&self, Parameters(i): Parameters<AddBookmarkInput>) -> String {
+        match self.client.add_bookmark(&i.channel, &i.title, &i.link).await {
+            Ok(()) => "Bookmark added".into(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Schedule a message for future delivery (draft/delayed send)")]
+    async fn schedule_message(&self, Parameters(i): Parameters<ScheduleMessageInput>) -> String {
+        match self.client.schedule_message(&i.channel, &i.text, i.post_at).await {
+            Ok(id) => format!("Scheduled: {id}"),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List scheduled (draft) messages")]
+    async fn list_scheduled_messages(&self, Parameters(i): Parameters<ListScheduledInput>) -> String {
+        match self.client.list_scheduled_messages(i.channel.as_deref()).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Delete a scheduled message before it sends")]
+    async fn delete_scheduled_message(&self, Parameters(i): Parameters<DeleteScheduledInput>) -> String {
+        match self.client.delete_scheduled_message(&i.channel, &i.scheduled_message_id).await {
+            Ok(()) => "Scheduled message deleted".into(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List channels with cursor pagination — returns channels + next_cursor for paging")]
+    async fn list_channels_paginated(&self, Parameters(i): Parameters<PaginatedChannelsInput>) -> String {
+        match self.client.list_channels_paginated(i.limit, i.cursor.as_deref()).await {
+            Ok((channels, cursor)) => {
+                let r = serde_json::json!({"channels": channels, "next_cursor": cursor});
+                serde_json::to_string_pretty(&r).unwrap()
+            }
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Get channel history with cursor pagination — returns messages + next_cursor for paging")]
+    async fn get_history_paginated(&self, Parameters(i): Parameters<PaginatedHistoryInput>) -> String {
+        match self.client.get_history_paginated(&i.channel, i.limit, i.cursor.as_deref()).await {
+            Ok((messages, cursor)) => {
+                let r = serde_json::json!({"messages": messages, "next_cursor": cursor});
+                serde_json::to_string_pretty(&r).unwrap()
+            }
             Err(e) => format!("Error: {e}"),
         }
     }

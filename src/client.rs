@@ -215,4 +215,105 @@ impl SlackClient {
     pub async fn list_emoji(&self) -> anyhow::Result<serde_json::Value> {
         self.get("emoji.list", &[]).await
     }
+
+    pub async fn get_file_info(&self, file_id: &str) -> anyhow::Result<serde_json::Value> {
+        #[derive(Deserialize)]
+        struct Resp { file: serde_json::Value }
+        let r: Resp = self.get("files.info", &[("file", file_id)]).await?;
+        Ok(r.file)
+    }
+
+    pub async fn list_files(&self, channel: Option<&str>, count: u32) -> anyhow::Result<Vec<serde_json::Value>> {
+        #[derive(Deserialize)]
+        struct Resp { files: Option<Vec<serde_json::Value>> }
+        let mut params = vec![("count", count.to_string())];
+        if let Some(ch) = channel { params.push(("channel", ch.to_string())); }
+        let param_refs: Vec<(&str, &str)> = params.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        let r: Resp = self.get("files.list", &param_refs).await?;
+        Ok(r.files.unwrap_or_default())
+    }
+
+    pub async fn read_canvas(&self, canvas_id: &str) -> anyhow::Result<String> {
+        #[derive(Deserialize)]
+        struct Resp { content: Option<String> }
+        let body = serde_json::json!({"canvas_id": canvas_id});
+        let r: Resp = self.post("canvases.access", &body).await
+            .or_else(|_| -> anyhow::Result<Resp> {
+                Ok(Resp { content: Some("Canvas read requires canvases:read scope".into()) })
+            })?;
+        Ok(r.content.unwrap_or_default())
+    }
+
+    pub async fn update_canvas(&self, canvas_id: &str, markdown: &str) -> anyhow::Result<()> {
+        let body = serde_json::json!({
+            "canvas_id": canvas_id,
+            "changes": [{"operation": "replace", "document_content": {"type": "markdown", "markdown": markdown}}]
+        });
+        let _: serde_json::Value = self.post("canvases.edit", &body).await?;
+        Ok(())
+    }
+
+    pub async fn list_bookmarks(&self, channel: &str) -> anyhow::Result<Vec<serde_json::Value>> {
+        #[derive(Deserialize)]
+        struct Resp { bookmarks: Option<Vec<serde_json::Value>> }
+        let r: Resp = self.get("bookmarks.list", &[("channel_id", channel)]).await?;
+        Ok(r.bookmarks.unwrap_or_default())
+    }
+
+    pub async fn add_bookmark(&self, channel: &str, title: &str, link: &str) -> anyhow::Result<()> {
+        let body = serde_json::json!({"channel_id": channel, "title": title, "type": "link", "link": link});
+        let _: serde_json::Value = self.post("bookmarks.add", &body).await?;
+        Ok(())
+    }
+
+    pub async fn schedule_message(&self, channel: &str, text: &str, post_at: u64) -> anyhow::Result<String> {
+        #[derive(Deserialize)]
+        struct Resp { scheduled_message_id: Option<String> }
+        let body = serde_json::json!({"channel": channel, "text": text, "post_at": post_at});
+        let r: Resp = self.post("chat.scheduleMessage", &body).await?;
+        Ok(r.scheduled_message_id.unwrap_or_default())
+    }
+
+    pub async fn list_scheduled_messages(&self, channel: Option<&str>) -> anyhow::Result<Vec<serde_json::Value>> {
+        #[derive(Deserialize)]
+        struct Resp { scheduled_messages: Option<Vec<serde_json::Value>> }
+        let body = match channel {
+            Some(ch) => serde_json::json!({"channel": ch}),
+            None => serde_json::json!({}),
+        };
+        let r: Resp = self.post("chat.scheduledMessages.list", &body).await?;
+        Ok(r.scheduled_messages.unwrap_or_default())
+    }
+
+    pub async fn delete_scheduled_message(&self, channel: &str, scheduled_message_id: &str) -> anyhow::Result<()> {
+        let body = serde_json::json!({"channel": channel, "scheduled_message_id": scheduled_message_id});
+        let _: serde_json::Value = self.post("chat.deleteScheduledMessage", &body).await?;
+        Ok(())
+    }
+
+    pub async fn list_channels_paginated(&self, limit: u32, cursor: Option<&str>) -> anyhow::Result<(Vec<Channel>, Option<String>)> {
+        #[derive(Deserialize)]
+        struct Resp { channels: Option<Vec<Channel>>, response_metadata: Option<RespMeta> }
+        #[derive(Deserialize)]
+        struct RespMeta { next_cursor: Option<String> }
+        let mut params = vec![("limit", limit.to_string()), ("types", "public_channel,private_channel".into())];
+        if let Some(c) = cursor { params.push(("cursor", c.to_string())); }
+        let param_refs: Vec<(&str, &str)> = params.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        let r: Resp = self.get("conversations.list", &param_refs).await?;
+        let next = r.response_metadata.and_then(|m| m.next_cursor).filter(|s| !s.is_empty());
+        Ok((r.channels.unwrap_or_default(), next))
+    }
+
+    pub async fn get_history_paginated(&self, channel: &str, limit: u32, cursor: Option<&str>) -> anyhow::Result<(Vec<Message>, Option<String>)> {
+        #[derive(Deserialize)]
+        struct Resp { messages: Option<Vec<Message>>, response_metadata: Option<RespMeta>, has_more: Option<bool> }
+        #[derive(Deserialize)]
+        struct RespMeta { next_cursor: Option<String> }
+        let mut params = vec![("channel", channel.to_string()), ("limit", limit.to_string())];
+        if let Some(c) = cursor { params.push(("cursor", c.to_string())); }
+        let param_refs: Vec<(&str, &str)> = params.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        let r: Resp = self.get("conversations.history", &param_refs).await?;
+        let next = r.response_metadata.and_then(|m| m.next_cursor).filter(|s| !s.is_empty());
+        Ok((r.messages.unwrap_or_default(), next))
+    }
 }

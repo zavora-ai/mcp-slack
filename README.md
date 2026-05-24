@@ -7,12 +7,14 @@
 
 Give your AI agents full Slack access — messages, threads, DMs, channels, canvases, reactions, and search. 16 tools over the Slack Web API with enterprise governance and audit-ready risk classification.
 
-## Tools (16)
+## Tools (27)
 
 | Tool | Purpose | Risk Class |
 |------|---------|------------|
 | `list_channels` | List public and private channels | Read-only |
+| `list_channels_paginated` | List channels with cursor pagination | Read-only |
 | `get_channel_history` | Get recent messages from a channel | Read-only |
+| `get_history_paginated` | Get history with cursor pagination | Read-only |
 | `get_thread` | Get thread replies for a message | Read-only |
 | `search_messages` | Search messages across all channels | Read-only |
 | `list_users` | List workspace users | Read-only |
@@ -20,13 +22,22 @@ Give your AI agents full Slack access — messages, threads, DMs, channels, canv
 | `list_members` | List members of a channel | Read-only |
 | `list_dms` | List direct message conversations | Read-only |
 | `list_emoji` | List custom emoji in the workspace | Read-only |
+| `list_files` | List files shared in a channel | Read-only |
+| `get_file` | Get file metadata and download URL | Read-only |
+| `read_canvas` | Read/export a canvas as markdown | Read-only |
+| `list_bookmarks` | List bookmarks in a channel | Read-only |
+| `list_scheduled_messages` | List scheduled (draft) messages | Read-only |
 | `send_message` | Send a message to a channel or thread | External write |
 | `open_dm` | Open a DM conversation with users | External write |
 | `add_reaction` | Add an emoji reaction to a message | External write |
 | `set_channel_topic` | Set a channel's topic | External write |
 | `upload_file` | Upload a text file to a channel | External write |
 | `create_channel` | Create a new public or private channel | External write |
-| `create_canvas` | Create a rich document and share in channel | External write |
+| `create_canvas` | Create a rich document in a channel | External write |
+| `update_canvas` | Update canvas content (markdown) | External write |
+| `add_bookmark` | Add a bookmark link to a channel | External write |
+| `schedule_message` | Schedule a message for future delivery | External write |
+| `delete_scheduled_message` | Cancel a scheduled message | External write |
 
 ## Comparison with Other Slack MCP Servers
 
@@ -34,19 +45,17 @@ Give your AI agents full Slack access — messages, threads, DMs, channels, canv
 |---------|---------------|---------------------|----------|
 | Thread replies (read) | ✅ | ✅ | ✅ |
 | DMs / Group DMs | ✅ | ✅ | ✅ |
-| Canvases (create) | ✅ | ❌ | ✅ |
+| Canvases (create/read/update) | ✅ | ❌ | ✅ |
 | Create channel | ✅ | ✅ | ✅ |
 | List channel members | ✅ | ✅ | ✅ |
 | Custom emoji list | ✅ | ❌ | ✅ |
 | Send messages + threads | ✅ | ✅ | ✅ |
 | Reactions | ✅ | ✅ | ✅ |
 | Search | ✅ | ✅ | ✅ |
-| File upload | ✅ | ❌ | ✅ |
-| File reading | ✅ | ❌ | ❌ |
-| Canvas read/update | ✅ | ❌ | ❌ |
-| Draft messages | ✅ | ❌ | ❌ |
-| Bookmarks | ❌ | ✅ | ❌ |
-| Pagination (cursor) | ✅ | ✅ | ❌ |
+| File upload + reading | ✅ | ❌ | ✅ |
+| Draft/scheduled messages | ✅ | ❌ | ✅ |
+| Bookmarks | ❌ | ✅ | ✅ |
+| Pagination (cursor) | ✅ | ✅ | ✅ |
 | OAuth/user tokens | ✅ | ✅ (cookie) | Bot token |
 | **Registry governance** | ❌ | ❌ | ✅ |
 | **Risk classification** | ❌ | ❌ | ✅ |
@@ -294,13 +303,10 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
 
 ## Roadmap
 
-- [ ] File reading (`files.info` + download)
-- [ ] Canvas read/update (`canvases.sections.lookup`, `canvases.edit`)
-- [ ] Cursor-based pagination for large workspaces
-- [ ] Bookmarks (`bookmarks.list`, `bookmarks.add`)
-- [ ] User status (`users.profile.set`)
-- [ ] Draft messages (preview before send)
-- [ ] OAuth user token support (for user-level access)
+- [ ] OAuth user token support (for user-level access beyond bot)
+- [ ] Workflow triggers (`workflows.triggers.create`)
+- [ ] Pin messages (`pins.add`, `pins.list`)
+- [ ] User presence/status (`users.setPresence`, `users.profile.set`)
 
 ## Registry Compliance
 
