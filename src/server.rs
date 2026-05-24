@@ -84,6 +84,54 @@ pub struct GetUserInput {
     pub user_id: String,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct GetThreadInput {
+    /// Channel ID
+    pub channel: String,
+    /// Parent message timestamp
+    pub thread_ts: String,
+    /// Max replies (default 20)
+    #[serde(default = "default_20")]
+    pub limit: u32,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct OpenDmInput {
+    /// Comma-separated user IDs to open DM with
+    pub users: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct CreateChannelInput {
+    /// Channel name (lowercase, no spaces, use hyphens)
+    pub name: String,
+    /// Create as private channel (default false)
+    #[serde(default)]
+    pub is_private: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ListMembersInput {
+    /// Channel ID
+    pub channel: String,
+    /// Max members (default 100)
+    #[serde(default = "default_100")]
+    pub limit: u32,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct CreateCanvasInput {
+    /// Channel ID to share canvas in
+    pub channel: String,
+    /// Canvas title
+    pub title: String,
+    /// Canvas content in markdown
+    pub markdown: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct EmptyInput {}
+
 fn default_20() -> u32 { 20 }
 fn default_100() -> u32 { 100 }
 
@@ -162,6 +210,62 @@ impl SlackServer {
     #[tool(description = "Get user profile info by user ID")]
     async fn get_user(&self, Parameters(i): Parameters<GetUserInput>) -> String {
         match self.client.get_user_info(&i.user_id).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Get thread replies for a message")]
+    async fn get_thread(&self, Parameters(i): Parameters<GetThreadInput>) -> String {
+        match self.client.get_thread_replies(&i.channel, &i.thread_ts, i.limit).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List direct message conversations")]
+    async fn list_dms(&self, Parameters(i): Parameters<ListChannelsInput>) -> String {
+        match self.client.list_dms(i.limit).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Open or get a DM conversation with one or more users (comma-separated user IDs)")]
+    async fn open_dm(&self, Parameters(i): Parameters<OpenDmInput>) -> String {
+        match self.client.open_dm(&i.users).await {
+            Ok(id) => format!("DM channel opened: {id}"),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Create a new channel")]
+    async fn create_channel(&self, Parameters(i): Parameters<CreateChannelInput>) -> String {
+        match self.client.create_channel(&i.name, i.is_private.unwrap_or(false)).await {
+            Ok(c) => serde_json::to_string_pretty(&c).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List members of a channel (returns user IDs)")]
+    async fn list_members(&self, Parameters(i): Parameters<ListMembersInput>) -> String {
+        match self.client.list_members(&i.channel, i.limit).await {
+            Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "Create a canvas (rich document) and share it in a channel")]
+    async fn create_canvas(&self, Parameters(i): Parameters<CreateCanvasInput>) -> String {
+        match self.client.create_canvas(&i.channel, &i.title, &i.markdown).await {
+            Ok(id) => format!("Canvas created: {id}"),
+            Err(e) => format!("Error: {e}"),
+        }
+    }
+
+    #[tool(description = "List custom emoji in the workspace")]
+    async fn list_emoji(&self, Parameters(_): Parameters<EmptyInput>) -> String {
+        match self.client.list_emoji().await {
             Ok(v) => serde_json::to_string_pretty(&v).unwrap(),
             Err(e) => format!("Error: {e}"),
         }

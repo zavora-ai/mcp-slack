@@ -164,4 +164,55 @@ impl SlackClient {
         let r: UserWrap = self.get("users.info", &[("user", user_id)]).await?;
         Ok(r.user)
     }
+
+    pub async fn get_thread_replies(&self, channel: &str, thread_ts: &str, limit: u32) -> anyhow::Result<Vec<Message>> {
+        let r: MessageList = self.get("conversations.replies", &[("channel", channel), ("ts", thread_ts), ("limit", &limit.to_string())]).await?;
+        Ok(r.messages.unwrap_or_default())
+    }
+
+    pub async fn list_dms(&self, limit: u32) -> anyhow::Result<Vec<Channel>> {
+        let r: ChannelList = self.get("conversations.list", &[("limit", &limit.to_string()), ("types", "im,mpim")]).await?;
+        Ok(r.channels.unwrap_or_default())
+    }
+
+    pub async fn open_dm(&self, users: &str) -> anyhow::Result<String> {
+        #[derive(Deserialize)]
+        struct OpenResp { channel: ChannelId }
+        #[derive(Deserialize)]
+        struct ChannelId { id: String }
+        let body = serde_json::json!({"users": users});
+        let r: OpenResp = self.post("conversations.open", &body).await?;
+        Ok(r.channel.id)
+    }
+
+    pub async fn create_channel(&self, name: &str, is_private: bool) -> anyhow::Result<Channel> {
+        #[derive(Deserialize)]
+        struct Wrap { channel: Channel }
+        let body = serde_json::json!({"name": name, "is_private": is_private});
+        let r: Wrap = self.post("conversations.create", &body).await?;
+        Ok(r.channel)
+    }
+
+    pub async fn list_members(&self, channel: &str, limit: u32) -> anyhow::Result<Vec<String>> {
+        #[derive(Deserialize)]
+        struct Resp { members: Option<Vec<String>> }
+        let r: Resp = self.get("conversations.members", &[("channel", channel), ("limit", &limit.to_string())]).await?;
+        Ok(r.members.unwrap_or_default())
+    }
+
+    pub async fn create_canvas(&self, channel: &str, title: &str, markdown: &str) -> anyhow::Result<String> {
+        let body = serde_json::json!({
+            "title": title,
+            "document_content": {"type": "markdown", "markdown": markdown},
+            "channel_id": channel
+        });
+        #[derive(Deserialize)]
+        struct Resp { canvas_id: Option<String> }
+        let r: Resp = self.post("canvases.create", &body).await?;
+        Ok(r.canvas_id.unwrap_or_default())
+    }
+
+    pub async fn list_emoji(&self) -> anyhow::Result<serde_json::Value> {
+        self.get("emoji.list", &[]).await
+    }
 }
