@@ -1,0 +1,74 @@
+server_id = "mcp_slack"
+display_name = "Slack"
+version = "1.0.0"
+domain = "collaboration"
+sdk_version = "0.1.0"
+risk_level = "medium"
+writes_allowed = "gated"
+transports = ["stdio"]
+credentials = ["vault://slack-bot-token"]
+governance_gates = []
+environments = ["development", "staging", "production"]
+
+[[tools]]
+name = "list_channels"
+description = "List Slack channels the bot has access to"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "get_channel_history"
+description = "Get recent messages from a channel"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "send_message"
+description = "Send a message to a Slack channel or thread"
+risk_class = "external_write"
+requires_approval = true
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "add_reaction"
+description = "Add an emoji reaction to a message"
+risk_class = "external_write"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "search_messages"
+description = "Search messages across all channels"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "list_users"
+description = "List workspace users"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "set_channel_topic"
+description = "Set a channel's topic"
+risk_class = "external_write"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "upload_file"
+description = "Upload a text file to a channel"
+risk_class = "external_write"
+requires_approval = true
+credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "get_user"
+description = "Get user profile info by user ID"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = ["vault://slack-bot-token"]
