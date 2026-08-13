@@ -285,7 +285,7 @@ npx @modelcontextprotocol/inspector mcp-slack
 ```toml
 server_id = "mcp_slack"
 display_name = "Slack"
-version = "1.1.0"
+version = "1.3.0"
 domain = "collaboration"
 risk_level = "medium"
 writes_allowed = "gated"
