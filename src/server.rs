@@ -233,7 +233,7 @@ pub struct SlackServer {
     pub client: Arc<SlackClient>,
 }
 
-#[tool_router(server_handler)]
+#[tool_router]
 impl SlackServer {
     #[tool(description = "List Slack channels (public and private) the bot has access to")]
     async fn list_channels(&self, Parameters(i): Parameters<ListChannelsInput>) -> String {
@@ -468,4 +468,11 @@ impl HealthCheck for SlackServer {
             latency_ms: Some(1),
         }
     }
+}
+
+adk_mcp_sdk::mcp_2026_server! {
+    server: SlackServer,
+    task_tools: ["upload_file"],
+    approval_tools: ["send_message", "upload_file"],
+    cache_ttl_ms: 60_000,
 }

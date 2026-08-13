@@ -2,17 +2,17 @@ server_id = "mcp_slack"
 display_name = "Slack"
 version = "1.2.0"
 domain = "collaboration"
-sdk_version = "0.1.0"
-risk_level = "medium"
+sdk_version = "0.2.0"
+risk_level = "high"
 writes_allowed = "gated"
 transports = ["stdio"]
 credentials = ["vault://slack-bot-token"]
-governance_gates = []
+governance_gates = ["mrtr_approval"]
 environments = ["development", "staging", "production"]
 
 [[tools]]
 name = "list_channels"
-description = "List Slack channels the bot has access to"
+description = "List Slack channels (public and private) the bot has access to"
 risk_class = "read_only"
 requires_approval = false
 credential_bindings = ["vault://slack-bot-token"]
@@ -72,3 +72,129 @@ description = "Get user profile info by user ID"
 risk_class = "read_only"
 requires_approval = false
 credential_bindings = ["vault://slack-bot-token"]
+
+[[tools]]
+name = "get_thread"
+description = "Get thread replies for a message"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_dms"
+description = "List direct message conversations"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "open_dm"
+description = "Open or get a DM conversation with one or more users (comma-separated user IDs)"
+risk_class = "internal_write"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "create_channel"
+description = "Create a new channel"
+risk_class = "internal_write"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_members"
+description = "List members of a channel (returns user IDs)"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "create_canvas"
+description = "Create a canvas (rich document) and share it in a channel"
+risk_class = "internal_write"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_emoji"
+description = "List custom emoji in the workspace"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "get_file"
+description = "Get file metadata and download URL by file ID"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_files"
+description = "List files shared in a channel or workspace"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "read_canvas"
+description = "Read a canvas (export as markdown)"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "update_canvas"
+description = "Update a canvas — replace content with new markdown"
+risk_class = "internal_write"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_bookmarks"
+description = "List bookmarks in a channel"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "add_bookmark"
+description = "Add a bookmark (link) to a channel"
+risk_class = "internal_write"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "schedule_message"
+description = "Schedule a message for future delivery (draft/delayed send)"
+risk_class = "generated_write_draft"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_scheduled_messages"
+description = "List scheduled (draft) messages"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "delete_scheduled_message"
+description = "Delete a scheduled message before it sends"
+risk_class = "internal_write"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "list_channels_paginated"
+description = "List channels with cursor pagination — returns channels + next_cursor for paging"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
+
+[[tools]]
+name = "get_history_paginated"
+description = "Get channel history with cursor pagination — returns messages + next_cursor for paging"
+risk_class = "read_only"
+requires_approval = false
+credential_bindings = []
